@@ -1,0 +1,172 @@
+package jfreechart;
+
+
+
+import static java.awt.BorderLayout.CENTER;
+import static java.awt.BorderLayout.SOUTH;
+import static org.jfree.chart.ChartFactory.createPieChart;
+import static org.jfree.chart.ChartFactory.createBarChart;
+import static org.jfree.chart.plot.PlotOrientation.VERTICAL;
+
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.general.DefaultPieDataset;
+
+import com.thi.notes.domain.NoteEleve;
+import com.thi.notes.domain.Sexe;
+
+public class NotesJFrame extends JFrame {
+
+/**
+ * serialVersionUID
+ */
+private static final long serialVersionUID = 3928008548751894521L;
+
+private NotesModele modele;
+private JTable table;
+
+private JDialog ratioHommeFemmeJdialog;
+private JDialog notesDernierExamHommeFemmeJdialog;
+
+public NotesJFrame() {
+	super();
+	setTitle("Notes des élèves");
+	setPreferredSize(new Dimension(500, 400));
+	setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+	modele = new NotesModele();
+
+	table = new JTable(modele);
+	table.setAutoCreateRowSorter(true);
+	table.setDefaultRenderer(Sexe.class, new SexeCellRenderer());
+	table.getColumnModel().getColumn(4).setCellRenderer(new NoteCellRenderer());
+
+	getContentPane().add(new JScrollPane(table), CENTER);
+
+	JPanel boutons = new JPanel();
+	boutons.add(new JButton(new ShowRatioHommeFemmeAction()));
+	boutons.add(new JButton(new ShowNotesHommeFemmeAction()));
+
+	getContentPane().add(boutons, SOUTH);
+
+	pack();
+}
+
+private class ShowRatioHommeFemmeAction extends AbstractAction {
+
+	private ShowRatioHommeFemmeAction() {
+		super("Ratio h/f");
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		ratioHommeFemmeJdialog = new JDialog();
+		ratioHommeFemmeJdialog.setTitle("Ratio H/F");
+
+		// Calcul du ratio
+		final List<NoteEleve> notes = modele.getNotes();
+
+		int nombreFemmes = 0;
+		int nombreHommes = 0;
+
+		for (NoteEleve noteEleve : notes) {
+			if (noteEleve.getEleve().getSexe() == Sexe.FEMME) {
+				nombreFemmes++;
+			} else {
+				nombreHommes++;
+			}
+		}
+
+		final DefaultPieDataset pieDataset = new DefaultPieDataset();
+
+		pieDataset.setValue("Femme", nombreFemmes);
+		pieDataset.setValue("Homme", nombreHommes);
+
+		final JFreeChart pieChart = createPieChart("Ratio H/F", pieDataset, true, false, false);
+		final ChartPanel cPanel = new ChartPanel(pieChart);
+
+		ratioHommeFemmeJdialog.getContentPane().add(cPanel, CENTER);
+
+		ratioHommeFemmeJdialog.pack();
+		ratioHommeFemmeJdialog.setVisible(true);
+	}
+
+}
+
+private class ShowNotesHommeFemmeAction extends AbstractAction {
+
+	private static final long serialVersionUID = -2594764540109647705L;
+
+	public ShowNotesHommeFemmeAction() {
+		super("Notes du dernier exam H/F");
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		notesDernierExamHommeFemmeJdialog = new JDialog();
+		notesDernierExamHommeFemmeJdialog.setTitle("Notes du dernier exam H/F");
+
+		// Calcul du nombre de copie sur chaque note
+
+		final Map<Integer, Integer> repartitionHomme = new HashMap<Integer, Integer>();
+		final Map<Integer, Integer> repartitionFemme = new HashMap<Integer, Integer>();
+		for (int i = 0; i <= 20; i++) {
+			repartitionHomme.put(i, 0);
+			repartitionFemme.put(i, 0);
+		}
+
+		final List<NoteEleve> notes = modele.getNotes();
+		for (NoteEleve noteEleve : notes) {
+			Double note = noteEleve.getNote();
+			if (noteEleve.getEleve().getSexe() == Sexe.FEMME) {
+				incrementNb(note, repartitionFemme);
+			} else {
+				incrementNb(note, repartitionHomme);
+			}
+		}
+
+		final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+		for (int i = 0; i <= 20; i++) {
+			dataset.addValue(repartitionHomme.get(i), "Homme", new Integer(i));
+		}
+
+		for (int i = 0; i <= 20; i++) {
+			dataset.addValue(repartitionFemme.get(i), "Femme", new Integer(i));
+		}
+
+		final JFreeChart barChart = createBarChart("Notes du dernier exam", "Note", "Nombre", dataset, VERTICAL, true, true, false);
+
+		final ChartPanel cPanel = new ChartPanel(barChart);
+
+		notesDernierExamHommeFemmeJdialog.getContentPane().add(cPanel, CENTER);
+
+		notesDernierExamHommeFemmeJdialog.pack();
+		notesDernierExamHommeFemmeJdialog.setVisible(true);
+	}
+}
+
+private void incrementNb(Double note, Map<Integer, Integer> repartition) {
+
+	int ceil = (int) Math.ceil(note);
+	Integer nb = repartition.get(ceil);
+	nb++;
+	repartition.put(ceil, nb);
+}
+
+}

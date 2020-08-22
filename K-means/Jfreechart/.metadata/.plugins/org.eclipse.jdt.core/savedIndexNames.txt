@@ -1,0 +1,10 @@
+INDEX VERSION 1.131+C:\Users\21266\Documents\Jfreechart\.metadata\.plugins\org.eclipse.jdt.core
+452860875.index
+1312875246.index
+970733565.index
+1248545562.index
+3029197089.index
+3156813033.index
+2013560930.index
+1796678794.index
+242133252.index
